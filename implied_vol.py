@@ -31,18 +31,18 @@ def implied_vol(
         return np.nan
 
     # --- 1. No-arbitrage bounds -------------------------------------------
-    disc_S = S * np.exp(-q * T)
+    # No-arbitrage bounds (non-dividend)
     disc_K = K * np.exp(-r * T)
     if option_type == "call":
-        lower, upper = max(disc_S - disc_K, 0.0), disc_S
+        lower, upper = max(S - disc_K, 0.0), S
     else:
-        lower, upper = max(disc_K - disc_S, 0.0), disc_K
+        lower, upper = max(disc_K - S, 0.0), disc_K
     if not (lower - tol <= price <= upper + tol):
         return np.nan  # unpriceable — bad quote or stale data
 
     # --- 2. Bracket the root ----------------------------------------------
     def f(sig):
-        return black_scholes(S, K, T, r, sig, option_type=option_type, q=q) - price
+        return black_scholes(S, K, T, r, sig, option_type=option_type) - price
 
     lo, hi = sigma_lo, sigma_hi
     if f(lo) * f(hi) > 0:
@@ -64,7 +64,7 @@ def implied_vol(
         else:
             lo = sigma
 
-        vega = black_scholes_vega(S, K, T, r, sigma, q=q)
+        vega = black_scholes_vega(S, K, T, r, sigma)
 
         if vega < 1e-8:                       # vega collapsed → NR unreliable
             sigma = 0.5 * (lo + hi)
